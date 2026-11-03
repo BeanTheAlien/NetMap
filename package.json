@@ -1,0 +1,22 @@
+{
+  "name": "@beanthealien/net",
+  "version": "1.0.0",
+  "description": "NetMap is a package designed for both web and Node.js to provide simple, reusable Net Maps.\\\r NetMap is designed to connect the front and back end.",
+  "main": "net.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepublish": "npx typescript"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BeanTheAlien/NetMap.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/BeanTheAlien/NetMap/issues"
+  },
+  "homepage": "https://github.com/BeanTheAlien/NetMap#readme"
+}
