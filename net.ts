@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type AnyMap = { [x: string]: any };
-type FormalMethod = "GET" | "POST"
-type InformalMethod = "get" | "post" | FormalMethod;
+type FormalMethod = "GET" | "POST" | "PUT" | "DELETE";
+type InformalMethod = "get" | "post" | "put" | "delete" | FormalMethod;
 
 /**
  * Source for requests through the Fetch API.
@@ -135,7 +135,7 @@ class Net {
         return "method" in h || "headers" in h || "body" in h || "credentials" in h;
     }
     isMethod(m: any): m is InformalMethod {
-        return m == "get" || m == "post" || m == "GET" || m == "POST";
+        return JSON.stringify(m).toLowerCase() in ["get", "post", "put", "delete"];
     }
     formURL(url: string) {
         return `${this.url}${url}`
@@ -212,6 +212,72 @@ class Net {
     post(url: URL, headers: RequestInit): Promise<Response>;
     post(url: string | URL, headers?: RequestInit) {
         return fetch(this.formURL(url.toString()), this.formHeaders("POST", headers));
+    }
+    /**
+     * Sends a PUT request to the URL provided.
+     * 
+     * Uses the syntax `${baseURL}${url}`.
+     * @param url The URL to request.
+     */
+    put(url: string): Promise<Response>;
+    /**
+     * Sends a PUT request to the URL provided.
+     * 
+     * Uses the syntax `${baseURL}${url}`.
+     * @param url The URL to request.
+     */
+    put(url: URL): Promise<Response>;
+    /**
+     * Sends a PUT request to the URL provided.
+     * 
+     * Uses the syntax `${baseURL}${url}`.
+     * @param url The URL to request.
+     * @param headers The headers to include.
+     */
+    put(url: string, headers: RequestInit): Promise<Response>;
+    /**
+     * Sends a PUT request to the URL provided.
+     * 
+     * Uses the syntax `${baseURL}${url}`.
+     * @param url The URL to request.
+     * @param headers The headers to include.
+     */
+    put(url: URL, headers: RequestInit): Promise<Response>;
+    put(url: string | URL, headers?: RequestInit) {
+        return fetch(this.formURL(url.toString()), this.formHeaders("PUT", headers));
+    }
+    /**
+     * Sends a DELETE request to the URL provided.
+     * 
+     * Uses the syntax `${baseURL}${url}`.
+     * @param url The URL to request.
+     */
+    del(url: string): Promise<Response>;
+    /**
+     * Sends a DELETE request to the URL provided.
+     * 
+     * Uses the syntax `${baseURL}${url}`.
+     * @param url The URL to request.
+     */
+    del(url: URL): Promise<Response>;
+    /**
+     * Sends a DELETE request to the URL provided.
+     * 
+     * Uses the syntax `${baseURL}${url}`.
+     * @param url The URL to request.
+     * @param headers The headers to include.
+     */
+    del(url: string, headers: RequestInit): Promise<Response>;
+    /**
+     * Sends a DELETE request to the URL provided.
+     * 
+     * Uses the syntax `${baseURL}${url}`.
+     * @param url The URL to request.
+     * @param headers The headers to include.
+     */
+    del(url: URL, headers: RequestInit): Promise<Response>;
+    del(url: string | URL, headers?: RequestInit) {
+        return fetch(this.formURL(url.toString()), this.formHeaders("DELETE", headers));
     }
     __prepare(arg1?: InformalMethod | RequestInit, arg2?: InformalMethod | RequestInit): [InformalMethod, RequestInit] {
         let method: InformalMethod = "POST"; // Default method
@@ -933,6 +999,42 @@ class NetMap<R extends AnyMap> extends Net {
         return fetch(this.formURL(url.toString()), this.formHeaders("POST", headers));
     }
     /**
+     * Sends a PUT request to the URL provided.
+     * 
+     * Uses the syntax `${baseURL}${url}`.
+     * @param url The URL to request.
+     */
+    put<U extends Key<R>>(url: U): Promise<Response>;
+    /**
+     * Sends a PUT request to the URL provided.
+     * 
+     * Uses the syntax `${baseURL}${url}`.
+     * @param url The URL to request.
+     * @param headers The headers to include.
+     */
+    put<U extends Key<R>>(url: U, headers: RequestInit): Promise<Response>;
+    put<U extends Key<R>>(url: U, headers?: RequestInit) {
+        return fetch(this.formURL(url.toString()), this.formHeaders("PUT", headers));
+    }
+    /**
+     * Sends a DELETE request to the URL provided.
+     * 
+     * Uses the syntax `${baseURL}${url}`.
+     * @param url The URL to request.
+     */
+    del<U extends Key<R>>(url: U): Promise<Response>;
+    /**
+     * Sends a DELETE request to the URL provided.
+     * 
+     * Uses the syntax `${baseURL}${url}`.
+     * @param url The URL to request.
+     * @param headers The headers to include.
+     */
+    del<U extends Key<R>>(url: U, headers: RequestInit): Promise<Response>;
+    del<U extends Key<R>>(url: U, headers?: RequestInit) {
+        return fetch(this.formURL(url.toString()), this.formHeaders("POST", headers));
+    }
+    /**
      * Sends a POST request to the URL provided.
      * 
      * Uses the syntax `${baseURL}${url}`.
@@ -1292,7 +1394,7 @@ class AdvancedNetMap<R extends AnyMap> extends NetMap<R> {
     json<K extends Key<R>>(url: K, arg1?: RequestInit | InformalMethod, arg2?: InformalMethod | RequestInit): Promise<Result<R, K>>;
     async json<K extends Key<R>>(url: K, arg1?: any, arg2?: any): Promise<Result<R, K>> {
         // detect "modern" usage
-        if(arg1 && typeof arg1 === "object" && !("method" in arg1) && !("headers" in arg1)) {
+        if(arg1 && typeof arg1 == "object" && !("method" in arg1) && !("headers" in arg1)) {
             // this is your tuple/body case fallback if needed
             return super.json(url as any, {
                 method: "POST",
@@ -1312,7 +1414,6 @@ class AdvancedNetMap<R extends AnyMap> extends NetMap<R> {
                 },
                 ...(options.body ? { body: JSON.stringify(options.body) } : {})
             };
-            console.log(req);
             return super.json(url as any, req);
         }
         // fallback: behave exactly like base class

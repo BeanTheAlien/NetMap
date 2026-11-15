@@ -103,3 +103,7 @@ const user = await net.json("signup", { username: "thisisthegreatestplan", email
 // safe (should success in response)
 console.log(user.success); // sample output: true
 ```
+
+# Changelog
+## v1.0.1
+- Add support for `PUT`, `DELETE` as methods.
