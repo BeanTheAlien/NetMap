@@ -55,7 +55,7 @@ The `NetMap` class is a little more complex; it offers custom routes, at the dra
 This example demonstrates the usage of `NetMap`.
 ```
 import { NetMap } from "@beanthealien/net";
-// define a route mapping interface (<=v1.0.0)
+// define a route mapping interface (<=v1.1.0)
 // sample response for getuser
 interface Routes {
     getuser: { u: { username: string, email: string } }
@@ -85,7 +85,7 @@ When a route pair is a tuple, the first element (0th index) is the required head
 This example demonstrates the usage of `AdvancedNetMap`.
 ```
 import { AdvancedNetMap } from "@beanthealien/net";
-// define a route mapping interface (<=v1.0.0)
+// define a route mapping interface (<=v1.1.0)
 // sample headers/response for signup
 // requires { username, email, string }
 // responds with a success and a potential message
@@ -107,3 +107,5 @@ console.log(user.success); // sample output: true
 # Changelog
 ## v1.0.1
 - Add support for `PUT`, `DELETE` as methods.
+## v1.1.0
+- Add new `fork` method to each `Net` class.

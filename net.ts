@@ -927,6 +927,21 @@ class Net {
     async bytes(url: string | URL, arg1?: InformalMethod | RequestInit, arg2?: InformalMethod | RequestInit): Promise<Uint8Array> {
         return (await this.__send(url, arg1, arg2)).bytes();
     }
+    /**
+     * Constructs a new, forked `Net` from this `Net`
+     * with the URL appending the `urlPart` supplied.
+     * @param urlPart The URL-part to append.
+     */
+    fork(urlPart: string): Net;
+    /**
+     * Constructs a new, forked `Net` from this `Net`
+     * with the URL appending the `urlPart` supplied.
+     * @param urlPart The URL-part to append.
+     */
+    fork(urlPart: URL): Net;
+    fork(urlPart: string | URL) {
+        return new Net(this.url + urlPart.toString());
+    }
 }
 type Key<T> = Extract<keyof T, string>;
 /**
@@ -1358,6 +1373,21 @@ class NetMap<R extends AnyMap> extends Net {
     async bytes<U extends Key<R>>(url: U, arg1?: InformalMethod | RequestInit, arg2?: InformalMethod | RequestInit): Promise<Uint8Array> {
         return super.bytes(url as any, arg1 as any, arg2 as any);
     }
+    /**
+     * Constructs a new, forked `Net` from this `Net`
+     * with the URL appending the `urlPart` supplied.
+     * @param urlPart The URL-part to append.
+     */
+    fork<T extends AnyMap>(urlPart: string): NetMap<T>;
+    /**
+     * Constructs a new, forked `Net` from this `Net`
+     * with the URL appending the `urlPart` supplied.
+     * @param urlPart The URL-part to append.
+     */
+    fork<T extends AnyMap>(urlPart: URL): NetMap<T>;
+    fork<T extends AnyMap>(urlPart: string | URL) {
+        return new NetMap<T>(this.url + urlPart.toString());
+    }
 }
 
 type Simple<R> = { [K in keyof R]: R[K] extends any[] ? never : R[K] extends AnyMap ? K : never }[keyof R] & string;
@@ -1418,6 +1448,21 @@ class AdvancedNetMap<R extends AnyMap> extends NetMap<R> {
         }
         // fallback: behave exactly like base class
         return super.json(url as any, arg1, arg2);
+    }
+    /**
+     * Constructs a new, forked `Net` from this `Net`
+     * with the URL appending the `urlPart` supplied.
+     * @param urlPart The URL-part to append.
+     */
+    fork<T extends AnyMap>(urlPart: string): AdvancedNetMap<T>;
+    /**
+     * Constructs a new, forked `Net` from this `Net`
+     * with the URL appending the `urlPart` supplied.
+     * @param urlPart The URL-part to append.
+     */
+    fork<T extends AnyMap>(urlPart: URL): AdvancedNetMap<T>;
+    fork<T extends AnyMap>(urlPart: string | URL) {
+        return new AdvancedNetMap<T>(this.url + urlPart.toString());
     }
 }
 export { Net, NetMap, AdvancedNetMap };
