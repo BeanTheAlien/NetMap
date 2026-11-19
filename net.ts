@@ -3,6 +3,102 @@ type AnyMap = { [x: string]: any };
 type FormalMethod = "GET" | "POST" | "PUT" | "DELETE";
 type InformalMethod = "get" | "post" | "put" | "delete" | FormalMethod;
 
+interface NativeDTMap {
+    text: string;
+    varchar: string;
+    varbinary: string;
+    bit: 0 | 1 | null;
+    json: object;
+    uuid: string;
+    date: `${string}-${string}-${string}`;
+    time: `${number}${number}:${number}${number}:${number}${number}`;
+}
+
+type __PostgreSQLRawTime = `${number}${number}:${number}${number}` | `${number}${number}`;
+type __PostgreSQLTimeZone = `+${__PostgreSQLRawTime}` | `-${__PostgreSQLRawTime}`;
+
+interface SQLDTMap extends NativeDTMap {
+    timestamp: number;
+    datetime: `${NativeDTMap["date"]} ${NativeDTMap["time"]}`;
+    numeric: number;
+    datetime2: `${NativeDTMap["date"]} ${NativeDTMap["time"]}` | `${NativeDTMap["date"]} ${NativeDTMap["time"]}.${number}`;
+    smalldatetime: `${NativeDTMap["date"]} ${NativeDTMap["time"]}`;
+    datetimeoffset: `${NativeDTMap["date"]} ${NativeDTMap["time"]}${__PostgreSQLTimeZone}`;
+}
+
+interface MySQLDTMap extends NativeDTMap {
+    timestamp: `${NativeDTMap["date"]} ${NativeDTMap["time"]}`;
+    datetime: `${NativeDTMap["date"]} ${NativeDTMap["time"]}`;
+    bool: boolean;
+    boolean: boolean;
+    decimal: number;
+    year: string;
+}
+
+interface PostgreSQLDTMap extends Omit<NativeDTMap, "time"> {
+    time: NativeDTMap["time"] | `${NativeDTMap["time"]}.${number}`;
+    timetz: `${PostgreSQLDTMap["time"]}${__PostgreSQLTimeZone}`;
+    timestamp: `${NativeDTMap["date"]} ${PostgreSQLDTMap["time"]}`;
+    timestamptz: `${PostgreSQLDTMap["timestamp"]}${__PostgreSQLTimeZone}`;
+    numeric: number;
+    bool: boolean;
+    bytea: string;
+    jsonb: object;
+}
+
+interface DataTypesMap {
+    sql: SQLDTMap;
+    mysql: MySQLDTMap;
+    postgresql: PostgreSQLDTMap;
+}
+
+/**
+ * SQL-native data types.
+ */
+type SQLDT = keyof SQLDTMap;
+/**
+ * MySQL-native data types.
+ */
+type MySQLDT = keyof MySQLDTMap;
+/**
+ * PostgreSQL-native data types.
+ */
+type PostgreSQLDT = keyof PostgreSQLDTMap;
+
+type DataTypes = {
+    [M in keyof DataTypesMap]: keyof DataTypesMap[M];
+};
+
+// Correlated mapped type (add `?` after `]` if T only needs a subset of SQL types)
+type SQLTypeRecord<M extends keyof DataTypesMap> = {
+    [K in keyof DataTypesMap[M]]: DataTypesMap[M][K];
+};
+
+type FromTypeMap<
+    M extends keyof DataTypesMap,
+    T extends SQLTypeRecord<M>
+> = { [X in keyof T]: X };
+
+interface BasicDataTypesMap {
+    string: string;
+    num: number;
+    bool: boolean;
+    json: Record<string, unknown>; // Fallback for untyped JSON
+}
+
+// Use an index signature rather than Record<...> to allow circular self-reference
+type BasicTypeRecord = {
+    [key: string]: keyof BasicDataTypesMap | BasicTypeRecord;
+};
+
+type FromBasicTypeMap<T extends BasicTypeRecord> = {
+    [X in keyof T]: T[X] extends keyof BasicDataTypesMap
+        ? BasicDataTypesMap[T[X]]
+        : T[X] extends BasicTypeRecord
+            ? FromBasicTypeMap<T[X]>
+            : never;
+};
+
 /**
  * Source for requests through the Fetch API.
  * 
