@@ -29,6 +29,7 @@ The `Net` class is the most simple - it merely wraps around `fetch`.
 | Excplicit Routes | No |
 | Typed JSON | No |
 | Required Headers | No |
+| Routed Definitions | No |
 ### Example
 This example demonstrates the usage of `Net`.
 ```
@@ -51,6 +52,7 @@ The `NetMap` class is a little more complex; it offers custom routes, at the dra
 | Excplicit Routes | Yes |
 | Typed JSON | Yes |
 | Required Headers | No |
+| Routed Definitions | No |
 ### Example
 This example demonstrates the usage of `NetMap`.
 ```
@@ -81,6 +83,7 @@ When a route pair is a tuple, the first element (0th index) is the required head
 | Excplicit Routes | Yes |
 | Typed JSON | Yes |
 | Required Headers | Yes |
+| Routed Definitions | Yes |
 ### Example
 This example demonstrates the usage of `AdvancedNetMap`.
 ```
@@ -109,3 +112,5 @@ console.log(user.success); // sample output: true
 - Add support for `PUT`, `DELETE` as methods.
 ## v1.1.0
 - Add new `fork` method to each `Net` class.
+## v2.0.0
+- Add routed definition for JavaScript users in `AdvancedNetMap`.

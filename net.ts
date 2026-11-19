@@ -83,21 +83,103 @@ interface BasicDataTypesMap {
     string: string;
     num: number;
     bool: boolean;
-    json: Record<string, unknown>; // Fallback for untyped JSON
+    json: BasicTypeRecord | Record<string, unknown>; // Fallback for untyped JSON
 }
 
-// Use an index signature rather than Record<...> to allow circular self-reference
-type BasicTypeRecord = {
-    [key: string]: keyof BasicDataTypesMap | BasicTypeRecord;
+type SQLTypeMapDef = {
+    [M in keyof DataTypesMap]: {
+        readonly style: M;
+        readonly map: Readonly<Record<string, DataTypes[M]>>;
+    };
+}[keyof DataTypesMap];
+
+type BasicTypeMapDef = {
+    readonly style: "basic";
+    readonly map: BasicTypeRecord;
 };
 
-type FromBasicTypeMap<T extends BasicTypeRecord> = {
-    [X in keyof T]: T[X] extends keyof BasicDataTypesMap
-        ? BasicDataTypesMap[T[X]]
-        : T[X] extends BasicTypeRecord
-            ? FromBasicTypeMap<T[X]>
+type TypeMapDef = SQLTypeMapDef | BasicTypeMapDef;
+
+// Each route is either a response schema or a [bodySchema, responseSchema] tuple
+type RouteDef = TypeMapDef | readonly [TypeMapDef, TypeMapDef];
+type RoutesSchema = Readonly<Record<string, RouteDef>>;
+
+type Prettify<T> = { [K in keyof T]: T[K] } & {};
+
+type BasicFieldType = keyof BasicDataTypesMap | `${keyof BasicDataTypesMap}?`;
+
+type BasicTypeRecord = {
+    readonly [key: string]: BasicFieldType | BasicTypeRecord;
+};
+
+type ResolveBasicValue<V> =
+    V extends `${infer Base extends keyof BasicDataTypesMap}?`
+        ? BasicDataTypesMap[Base]
+        : V extends keyof BasicDataTypesMap
+            ? BasicDataTypesMap[V]
+            : V extends BasicTypeRecord
+                ? FromBasicTypeMap<V>
+                : never;
+
+type FromBasicTypeMap<T extends BasicTypeRecord> = Prettify<
+    {
+        -readonly [X in keyof T as T[X] extends `${string}?` ? never : X]: ResolveBasicValue<T[X]>;
+    } & {
+        -readonly [X in keyof T as T[X] extends `${string}?` ? X : never]?: ResolveBasicValue<T[X]>;
+    }
+>;
+
+type SQLFieldType<M extends keyof DataTypesMap> = DataTypes[M] | `${DataTypes[M]}?`;
+
+type ResolveSQLValue<M extends keyof DataTypesMap, V> =
+    V extends `${infer Base extends DataTypes[M]}?`
+        ? DataTypesMap[M][Base]
+        : V extends DataTypes[M]
+            ? DataTypesMap[M][V]
+            : never;
+
+type FromSchemaMap<
+    M extends keyof DataTypesMap,
+    T extends Readonly<Record<string, SQLFieldType<M>>>
+> = Prettify<
+    {
+        -readonly [X in keyof T as T[X] extends `${string}?` ? never : X]: ResolveSQLValue<M, T[X]>;
+    } & {
+        -readonly [X in keyof T as T[X] extends `${string}?` ? X : never]?: ResolveSQLValue<M, T[X]>;
+    }
+>;
+
+type ResolveTypeMapDef<D extends TypeMapDef> =
+    D extends { readonly style: "basic"; readonly map: infer M extends BasicTypeRecord }
+        ? FromBasicTypeMap<M>
+        : {
+              [S in keyof DataTypesMap]: D extends {
+                  readonly style: S;
+                  readonly map: infer M extends Readonly<Record<string, DataTypes[S]>>;
+              }
+                  ? FromSchemaMap<S, M>
+                  : never;
+          }[keyof DataTypesMap];
+
+type FromRoutesSchema<S extends RoutesSchema> = {
+    -readonly [K in keyof S]: S[K] extends readonly [
+        infer Pay extends TypeMapDef,
+        infer Res extends TypeMapDef
+    ]
+        ? [ResolveTypeMapDef<Pay>, ResolveTypeMapDef<Res>]
+        : S[K] extends TypeMapDef
+            ? ResolveTypeMapDef<S[K]>
             : never;
 };
+
+// Guards against generic Record<string, any> (AnyMap) matching RoutesSchema
+type ResolveRoutes<T> = (
+    0 extends 1 & T[keyof T]
+        ? T
+        : T extends RoutesSchema
+            ? FromRoutesSchema<T>
+            : T
+) & AnyMap;
 
 /**
  * Source for requests through the Fetch API.
@@ -1513,7 +1595,12 @@ type JsonOptions<R, K extends keyof R> = R[K] extends [infer Pay, any] ? { body:
  * console.log(out.success); // sample output: true
  * ```
  */
-class AdvancedNetMap<R extends AnyMap> extends NetMap<R> {
+class AdvancedNetMap<const T extends AnyMap | RoutesSchema = AnyMap, R extends AnyMap = ResolveRoutes<T>> extends NetMap<R> {
+    constructor(url: string | URL);
+    constructor(url: string | URL, routes: T);
+    constructor(urlOrHeaders?: string | URL | Key<R>, _?: T) {
+        super(urlOrHeaders as any);
+    }
     json<K extends Key<R>>(url: K, body: Payload<R, K>): Promise<Result<R, K>>;
     json<K extends Key<R>>(url: K, options?: JsonOptions<R, K>): Promise<Result<R, K>>;
     // compatibility overload (matches base class chaos)
@@ -1550,15 +1637,15 @@ class AdvancedNetMap<R extends AnyMap> extends NetMap<R> {
      * with the URL appending the `urlPart` supplied.
      * @param urlPart The URL-part to append.
      */
-    fork<T extends AnyMap>(urlPart: string): AdvancedNetMap<T>;
+    fork<const U extends AnyMap | RoutesSchema = AnyMap>(urlPart: string, routes?: U): AdvancedNetMap<U>;
     /**
      * Constructs a new, forked `Net` from this `Net`
      * with the URL appending the `urlPart` supplied.
      * @param urlPart The URL-part to append.
      */
-    fork<T extends AnyMap>(urlPart: URL): AdvancedNetMap<T>;
-    fork<T extends AnyMap>(urlPart: string | URL) {
-        return new AdvancedNetMap<T>(this.url + urlPart.toString());
+    fork<const U extends AnyMap | RoutesSchema = AnyMap>(urlPart: URL, routes?: U): AdvancedNetMap<U>;
+    fork<const U extends AnyMap | RoutesSchema = AnyMap>(urlPart: string | URL, routes?: U) {
+        return new AdvancedNetMap<U>(this.url + urlPart.toString(), routes as any);
     }
 }
 export { Net, NetMap, AdvancedNetMap };
