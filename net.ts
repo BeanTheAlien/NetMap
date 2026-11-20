@@ -52,19 +52,6 @@ interface DataTypesMap {
     postgresql: PostgreSQLDTMap;
 }
 
-/**
- * SQL-native data types.
- */
-type SQLDT = keyof SQLDTMap;
-/**
- * MySQL-native data types.
- */
-type MySQLDT = keyof MySQLDTMap;
-/**
- * PostgreSQL-native data types.
- */
-type PostgreSQLDT = keyof PostgreSQLDTMap;
-
 type DataTypes = {
     [M in keyof DataTypesMap]: keyof DataTypesMap[M];
 };
@@ -85,7 +72,9 @@ interface BasicDataTypesMap {
     bool: boolean;
     json: BasicTypeRecord | Record<string, unknown>; // Fallback for untyped JSON
 }
-interface MoreDataTypesMap {}
+interface MoreDataTypesMap {
+    email: `${string}@${string}.${string}`;
+}
 
 type SQLTypeMapDef = {
     [M in keyof DataTypesMap]: {
@@ -98,12 +87,12 @@ type BasicTypeMapDef = {
     readonly style: "basic";
     readonly map: BasicTypeRecord;
 };
-type MoreypesMapDef = {
+type MoreTypesMapDef = {
     readonly style: "more";
     readonly map: MoreDataTypesMap;
 };
 
-type TypeMapDef = SQLTypeMapDef | BasicTypeMapDef;
+type TypeMapDef = SQLTypeMapDef | BasicTypeMapDef | MoreTypesMapDef;
 
 // Each route is either a response schema or a [bodySchema, responseSchema] tuple
 type RouteDef = TypeMapDef | readonly [TypeMapDef, TypeMapDef];
@@ -111,40 +100,52 @@ type RoutesSchema = Readonly<Record<string, RouteDef>>;
 
 type Prettify<T> = { [K in keyof T]: T[K] } & {};
 
-type BasicFieldType = keyof BasicDataTypesMap | `${keyof BasicDataTypesMap}?`;
+type DefFieldType<T> = Extract<keyof T, string | number> | `${Extract<keyof T, string | number>}[]` | `${Extract<keyof T, string | number>}?`;
+
+type BasicFieldType = DefFieldType<BasicDataTypesMap>;
 
 type BasicTypeRecord = {
     readonly [key: string]: BasicFieldType | BasicTypeRecord;
 };
 
-type MoreFieldType = keyof MoreDataTypesMap | `${keyof MoreDataTypesMap}?`;
+type MoreFieldType = DefFieldType<MoreDataTypesMap>;
 type MoreTypeRecord = {
     readonly [x: string]: MoreFieldType | MoreTypeRecord;
 };
 
-type SimpleResolver<V, M, R, F> =
-    V extends `${infer B extends keyof M & string}?` ?
-        M[B] :
-        V extends keyof M ?
-            M[V] :
-                V extends R ?
-                    F :
-                    never;
-
 type ResolveBasicValue<V> =
-    V extends `${infer Base extends keyof BasicDataTypesMap}?`
-        ? BasicDataTypesMap[Base]
-        : V extends keyof BasicDataTypesMap
-            ? BasicDataTypesMap[V]
-            : V extends BasicTypeRecord
-                ? FromBasicTypeMap<V>
-                : never;
+    V extends `${infer Base extends keyof BasicDataTypesMap}[]`
+        ? BasicDataTypesMap[Base][]
+        : V extends `${infer Base extends keyof BasicDataTypesMap}?`
+            ? BasicDataTypesMap[Base]
+            : V extends keyof BasicDataTypesMap
+                ? BasicDataTypesMap[V]
+                : V extends BasicTypeRecord
+                    ? FromBasicTypeMap<V>
+                    : never;
+type ResolveMoreValue<V> =
+    V extends `${infer Base extends keyof MoreDataTypesMap}[]`
+        ? MoreDataTypesMap[Base][]
+        : V extends `${infer Base extends keyof MoreDataTypesMap}?`
+            ? MoreDataTypesMap[Base]
+            : V extends keyof MoreDataTypesMap
+                ? MoreDataTypesMap[V]
+                : V extends MoreTypeRecord
+                    ? FromMoreTypeMap<V>
+                    : never;
 
 type FromBasicTypeMap<T extends BasicTypeRecord> = Prettify<
     {
         -readonly [X in keyof T as T[X] extends `${string}?` ? never : X]: ResolveBasicValue<T[X]>;
     } & {
         -readonly [X in keyof T as T[X] extends `${string}?` ? X : never]?: ResolveBasicValue<T[X]>;
+    }
+>;
+type FromMoreTypeMap<T extends MoreTypeRecord> = Prettify<
+    {
+        -readonly [X in keyof T as T[X] extends `${string}?` ? never : X]: ResolveMoreValue<T[X]>;
+    } & {
+        -readonly [X in keyof T as T[X] extends `${string}?` ? X : never]?: ResolveMoreValue<T[X]>;
     }
 >;
 
@@ -171,6 +172,8 @@ type FromSchemaMap<
 type ResolveTypeMapDef<D extends TypeMapDef> =
     D extends { readonly style: "basic"; readonly map: infer M extends BasicTypeRecord }
         ? FromBasicTypeMap<M>
+        : D extends { readonly style: "more"; readonly map: infer M extends MoreTypeRecord } ?
+        FromMoreTypeMap<M>
         : {
               [S in keyof DataTypesMap]: D extends {
                   readonly style: S;
@@ -1652,19 +1655,22 @@ class AdvancedNetMap<const T extends AnyMap | RoutesSchema = AnyMap, R extends A
         return super.json(url as any, arg1, arg2);
     }
     /**
-     * Constructs a new, forked `Net` from this `Net`
+     * Constructs a new, forked `AdvancedNetMap` from this `AdvancedNetMap`
      * with the URL appending the `urlPart` supplied.
      * @param urlPart The URL-part to append.
      */
     fork<const U extends AnyMap | RoutesSchema = AnyMap>(urlPart: string, routes?: U): AdvancedNetMap<U>;
     /**
-     * Constructs a new, forked `Net` from this `Net`
+     * Constructs a new, forked `AdvancedNetMap` from this `AdvancedNetMap`
      * with the URL appending the `urlPart` supplied.
      * @param urlPart The URL-part to append.
      */
     fork<const U extends AnyMap | RoutesSchema = AnyMap>(urlPart: URL, routes?: U): AdvancedNetMap<U>;
-    fork<const U extends AnyMap | RoutesSchema = AnyMap>(urlPart: string | URL, routes?: U) {
-        return new AdvancedNetMap<U>(this.url + urlPart.toString(), routes as any);
+    fork<const U extends AnyMap | RoutesSchema = AnyMap>(urlPart: string | URL, _?: U) {
+        return new AdvancedNetMap<U>(this.url + urlPart.toString());
     }
 }
-export { Net, NetMap, AdvancedNetMap };
+function defRoutes<const T extends RoutesSchema>(routes: T) {
+    return routes;
+}
+export { Net, NetMap, AdvancedNetMap, defRoutes };

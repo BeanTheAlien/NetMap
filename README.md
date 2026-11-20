@@ -32,7 +32,7 @@ The `Net` class is the most simple - it merely wraps around `fetch`.
 | Routed Definitions | No |
 ### Example
 This example demonstrates the usage of `Net`.
-```
+```javascript
 import { Net } from "@beanthealien/net";
 // construct a net object
 // using the BeanTheAlien Server
@@ -55,7 +55,7 @@ The `NetMap` class is a little more complex; it offers custom routes, at the dra
 | Routed Definitions | No |
 ### Example
 This example demonstrates the usage of `NetMap`.
-```
+```typescript
 import { NetMap } from "@beanthealien/net";
 // define a route mapping interface (<=v1.1.0)
 // sample response for getuser
@@ -76,7 +76,8 @@ console.log(user.u.username); // sample output: me
 ```
 ## AdvancedNetMap
 The `AdvancedNetMap` class is the most comprehensive. It extends the capabilities of `NetMap` and offers tuple-mapped route pairs.\
-When a route pair is a tuple, the first element (0th index) is the required headers, the second element (1st index) is the returned type.
+When supplying via TypeScript, each route pair is a single which represents the return type or tuple where the first element (0th index) is the required headers and the second element (1st index) is the returned type.\
+When supplying via JavaScript, each route contains a name, which either maps to a single object, which contains a style ("sql", "mysql", "postgresql", "basic", "more") and the mapping or a tuple where the first element (0th index) is the required headers and the second element (1st index) is the returned type.
 | Feature | Inclusion |
 | :---: | :---: |
 | Response Wrappers | Yes |
@@ -85,8 +86,8 @@ When a route pair is a tuple, the first element (0th index) is the required head
 | Required Headers | Yes |
 | Routed Definitions | Yes |
 ### Example
-This example demonstrates the usage of `AdvancedNetMap`.
-```
+This example demonstrates the usage of `AdvancedNetMap` (prior to v2.0.0).
+```typescript
 import { AdvancedNetMap } from "@beanthealien/net";
 // define a route mapping interface (<=v1.1.0)
 // sample headers/response for signup
@@ -104,6 +105,33 @@ const net = new AdvancedNetMap<Routes>("https://beanthealien-server.onrender.com
 // include some headers
 const user = await net.json("signup", { username: "thisisthegreatestplan", email: "myemail@service.com", password: "wheresmywater" });
 // safe (should success in response)
+console.log(user.success); // sample output: true
+```
+### Example (>=v2.0.0)
+This example demonstrates the usage of `AdvancedNetMap` (v2.0.0 and onward).
+```javascript
+import { AdvancedNetMap, defRoutes } from "@beanthealien/net";
+// define AdvancedNetMap object
+// (use defRoutes for IntelliSense)
+// (which just returns input)
+const routes = defRoutes({
+    // IN: { username: string, email: string, password: string }
+    // OUT: { success: boolean, message?: string }
+    signup: [
+        { style: "basic", map: { username: "string", email: "string", password: "string" } },
+        { style: "basic", map: { success: "bool", message: "string?" } }
+    ]
+});
+// define object here
+// (routes is stubbed internally)
+// (but captures routes: T)
+const net = new AdvancedNetMap("https://beanthealien-server.onrender.com", routes);
+// query
+// error: number cannot be assigned to string
+const user = await net.json("signup", { username: 123, email: "myemail@service.com", password: "thecakeisalie" });
+// ...if we fixed the error, we still
+// get intelligent responses
+// even in JS!
 console.log(user.success); // sample output: true
 ```
 
