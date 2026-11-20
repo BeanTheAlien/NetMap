@@ -85,6 +85,7 @@ interface BasicDataTypesMap {
     bool: boolean;
     json: BasicTypeRecord | Record<string, unknown>; // Fallback for untyped JSON
 }
+interface MoreDataTypesMap {}
 
 type SQLTypeMapDef = {
     [M in keyof DataTypesMap]: {
@@ -96,6 +97,10 @@ type SQLTypeMapDef = {
 type BasicTypeMapDef = {
     readonly style: "basic";
     readonly map: BasicTypeRecord;
+};
+type MoreypesMapDef = {
+    readonly style: "more";
+    readonly map: MoreDataTypesMap;
 };
 
 type TypeMapDef = SQLTypeMapDef | BasicTypeMapDef;
@@ -111,6 +116,20 @@ type BasicFieldType = keyof BasicDataTypesMap | `${keyof BasicDataTypesMap}?`;
 type BasicTypeRecord = {
     readonly [key: string]: BasicFieldType | BasicTypeRecord;
 };
+
+type MoreFieldType = keyof MoreDataTypesMap | `${keyof MoreDataTypesMap}?`;
+type MoreTypeRecord = {
+    readonly [x: string]: MoreFieldType | MoreTypeRecord;
+};
+
+type SimpleResolver<V, M, R, F> =
+    V extends `${infer B extends keyof M & string}?` ?
+        M[B] :
+        V extends keyof M ?
+            M[V] :
+                V extends R ?
+                    F :
+                    never;
 
 type ResolveBasicValue<V> =
     V extends `${infer Base extends keyof BasicDataTypesMap}?`
