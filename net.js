@@ -77,7 +77,7 @@ class Net {
         return "method" in h || "headers" in h || "body" in h || "credentials" in h;
     }
     isMethod(m) {
-        return JSON.stringify(m).toLowerCase() in ["get", "post", "put", "delete"];
+        return typeof m == "string" && m.toLowerCase() in ["get", "post", "put", "delete"];
     }
     formURL(url) {
         return `${this.url}${url}`;

@@ -145,3 +145,5 @@ console.log(user.success); // sample output: true
 ## v2.0.1
 - Compile `net.ts` to `net.js`.
 - Republish hotfix.
+## v2.0.2
+- Change `JSON.stringify` to explicit string-type check.
