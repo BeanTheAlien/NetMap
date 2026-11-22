@@ -142,3 +142,6 @@ console.log(user.success); // sample output: true
 - Add new `fork` method to each `Net` class.
 ## v2.0.0
 - Add routed definition for JavaScript users in `AdvancedNetMap`.
+## v2.0.1
+- Compile `net.ts` to `net.js`.
+- Republish hotfix.
