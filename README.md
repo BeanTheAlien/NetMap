@@ -147,3 +147,8 @@ console.log(user.success); // sample output: true
 - Republish hotfix.
 ## v2.0.2
 - Change `JSON.stringify` to explicit string-type check.
+## v2.1.0 [BREAKING]
+- Overload collapsing.
+- Remove `(?, InformalMethod, RequestInit)` overload in favor of `(?, RequestInit, InformalMethod)`.
+- TODO: investigate potential bug in `AdvancedNetMap` (possible super) that causes method to not be consumed
+- TODO: investigate potential bug in `AdvancedNetMap` that causes route URL to match to any string and not a key
