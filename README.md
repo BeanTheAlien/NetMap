@@ -152,3 +152,5 @@ console.log(user.success); // sample output: true
 - Remove `(?, InformalMethod, RequestInit)` overload in favor of `(?, RequestInit, InformalMethod)`.
 - TODO: investigate potential bug in `AdvancedNetMap` (possible super) that causes method to not be consumed
 - TODO: investigate potential bug in `AdvancedNetMap` that causes route URL to match to any string and not a key
+## v2.2.0
+- Fix match route to any string.

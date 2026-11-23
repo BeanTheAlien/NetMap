@@ -183,7 +183,14 @@ type ResolveTypeMapDef<D extends TypeMapDef> =
                   : never;
           }[keyof DataTypesMap];
 
-type FromRoutesSchema<S extends RoutesSchema> = {
+// 1. Check route values homomorphically so both `type` and `interface` work
+type IsRoutesSchema<T> = keyof T extends never
+    ? false
+    : { [K in keyof T]: T[K] extends RouteDef ? true : false }[keyof T] extends true
+        ? true
+        : false;
+
+type FromRoutesSchema<S> = {
     -readonly [K in keyof S]: S[K] extends readonly [
         infer Pay extends TypeMapDef,
         infer Res extends TypeMapDef
@@ -194,14 +201,13 @@ type FromRoutesSchema<S extends RoutesSchema> = {
             : never;
 };
 
-// Guards against generic Record<string, any> (AnyMap) matching RoutesSchema
-type ResolveRoutes<T> = (
+// 2. Remove `& AnyMap` so literal keys are preserved
+type ResolveRoutes<T extends object> =
     0 extends 1 & T[keyof T]
         ? T
-        : T extends RoutesSchema
+        : IsRoutesSchema<T> extends true
             ? FromRoutesSchema<T>
-            : T
-) & AnyMap;
+            : T;
 
 type Url = string | URL;
 type Headers = RequestInit | AnyMap;
@@ -777,7 +783,7 @@ class NetMap<R extends AnyMap> extends Net {
      */
     del<U extends Key<R>>(url: U, headers: RequestInit): Promise<Response>;
     del<U extends Key<R>>(url: U, headers?: RequestInit) {
-        return fetch(this.formURL(url.toString()), this.formHeaders("POST", headers));
+        return fetch(this.formURL(url.toString()), this.formHeaders("DELETE", headers));
     }
     /**
      * Sends a POST request to the URL provided.
@@ -1012,7 +1018,7 @@ class NetMap<R extends AnyMap> extends Net {
      * @param url The URL to request.
      * @param headers The headers to include.
      */
-    bytes<U extends Key<R>>(url: string, headers: RequestInit): Promise<Uint8Array>;
+    bytes<U extends Key<R>>(url: U, headers: RequestInit): Promise<Uint8Array>;
     /**
      * Sends a request to the URL provided.
      * 
@@ -1022,7 +1028,7 @@ class NetMap<R extends AnyMap> extends Net {
      * @param url The URL to request.
      * @param method The method to use (GET/POST).
      */
-    bytes<U extends Key<R>>(url: string, method: InformalMethod): Promise<Uint8Array>;
+    bytes<U extends Key<R>>(url: U, method: InformalMethod): Promise<Uint8Array>;
     /**
      * Sends a request to the URL provided.
      * 
