@@ -139,6 +139,11 @@ class Net {
     async bytes(url, arg1, arg2) {
         return (await this.__send(url, arg1, arg2)).bytes();
     }
+    /**
+     * Constructs a new, forked `Net` from this `Net`
+     * with the URL appending the `urlPart` supplied.
+     * @param urlPart The URL-part to append.
+     */
     fork(urlPart) {
         return new Net(this.url + urlPart.toString());
     }
@@ -178,7 +183,7 @@ class NetMap extends Net {
         return fetch(this.formURL(url.toString()), this.formHeaders("PUT", headers));
     }
     del(url, headers) {
-        return fetch(this.formURL(url.toString()), this.formHeaders("POST", headers));
+        return fetch(this.formURL(url.toString()), this.formHeaders("DELETE", headers));
     }
     async text(url, arg1, arg2) {
         return super.text(url, arg1, arg2);
@@ -198,6 +203,11 @@ class NetMap extends Net {
     async bytes(url, arg1, arg2) {
         return super.bytes(url, arg1, arg2);
     }
+    /**
+     * Constructs a new, forked `Net` from this `Net`
+     * with the URL appending the `urlPart` supplied.
+     * @param urlPart The URL-part to append.
+     */
     fork(urlPart) {
         return new NetMap(this.url + urlPart.toString());
     }
@@ -255,7 +265,13 @@ class AdvancedNetMap extends NetMap {
         // fallback: behave exactly like base class
         return super.json(url, arg1, arg2);
     }
-    fork(urlPart, _) {
+    /**
+     * Constructs a new, forked `AdvancedNetMap` from this `AdvancedNetMap`
+     * with the URL appending the `urlPart` supplied.
+     * @param urlPart The URL-part to append.
+     * @param routes The routes to be included.
+     */
+    fork(urlPart, routes) {
         return new AdvancedNetMap(this.url + urlPart.toString());
     }
 }

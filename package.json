@@ -1,6 +1,6 @@
 {
   "name": "@beanthealien/net",
-  "version": "2.0.2",
+  "version": "2.2.0",
   "description": "NetMap is a package designed for both web and Node.js to provide simple, reusable Net Maps.\\\r NetMap is designed to connect the front and back end.",
   "main": "net.js",
   "scripts": {
